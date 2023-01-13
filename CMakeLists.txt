@@ -3,7 +3,7 @@ project(phpmicro C)
 
 set(CMAKE_C_STANDARD 11)
 
-include_directories(.)
+include_directories(. /usr/include/php/20190902/ /usr/include/php/20190902/main)
 
 add_executable(phpmicro
         php_micro.c

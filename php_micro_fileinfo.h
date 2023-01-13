@@ -27,12 +27,6 @@ limitations under the License.
 
 uint32_t micro_get_sfx_filesize(void);
 
-#ifdef PHP_WIN32
-/*
- *   micro_get_filename_w - get self filename abs path (widechar)
- */
-const wchar_t *micro_get_filename_w(void);
-#endif
 /*
  *   micro_get_filename - get self filename abs path (char *)
  */

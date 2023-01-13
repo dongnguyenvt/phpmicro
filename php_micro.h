@@ -36,13 +36,8 @@ limitations under the License.
 #endif
 
 #define PHP_MICRO_SFX_FILESIZE_ID 12345
-#ifdef PHP_WIN32
-#    define PHP_MICRO_HINT_CMDC "copy /b %s + mycode.php mycode.exe"
-#    define PHP_MICRO_HINT_CMDE "mycode.exe myarg1 myarg2"
-#else
 #    define PHP_MICRO_HINT_CMDC "cat %s mycode.php > mycode && chmod 0755 ./mycode"
 #    define PHP_MICRO_HINT_CMDE "./mycode myarg1 myarg2"
-#endif
 #define PHP_MICRO_HINT \
     "micro SAPI for PHP" PHP_VERSION " v" PHP_MICRO_VER_STR "\n" \
     "Usage: concatenate this binary with any php code then execute it.\n" \
@@ -51,11 +46,7 @@ limitations under the License.
     "then execute it:\n" \
     "    " PHP_MICRO_HINT_CMDE "\n"
 
-#ifdef PHP_WIN32
-#    define MICRO_SFX_EXPORT __declspec(dllexport) __declspec(noinline)
-#else
 #    define MICRO_SFX_EXPORT __attribute__((visibility("default")))
-#endif
 
 #define PHP_MICRO_INIMARK     ((uint8_t[4]){0xfd, 0xf6, 0x69, 0xe6})
 #define PHP_MICRO_INIENTRY(x) ("micro." #x)

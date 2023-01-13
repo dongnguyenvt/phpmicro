@@ -43,21 +43,9 @@ here's original copyright notice
 #include "php_main.h"
 #include "php_variables.h"
 
-#ifdef PHP_WIN32
-#    include "win32/console.h"
-#    include "win32/ioutil.h"
-#    include "win32/select.h"
-#    include "win32/signal.h"
-#    include "win32/time.h"
-BOOL php_win32_init_random_bytes(void);
-BOOL php_win32_shutdown_random_bytes(void);
-BOOL php_win32_ioutil_init(void);
-void php_win32_init_gettimeofday(void);
-#else
 #    define php_select(m, r, w, e, t) select(m, r, w, e, t)
 #    include <fcntl.h>
 #    include <sys/stat.h>
-#endif
 
 #include "ext/standard/php_standard.h"
 #include "sapi/cli/php_cli_process_title.h"
@@ -210,9 +198,6 @@ static void sapi_micro_register_variables(zval *track_vars_array) /* {{{ */
 static void sapi_micro_log_message(const char *message, int syslog_type_int) /* {{{ */
 {
     fprintf(stderr, "%s\n", message);
-#ifdef PHP_WIN32
-    fflush(stderr);
-#endif
 }
 /* }}} */
 
@@ -332,22 +317,6 @@ static sapi_module_struct micro_sapi_module = {
 };
 /* }}} */
 
-#ifdef _DEBUG
-
-ZEND_BEGIN_ARG_INFO(arginfo_dl, 0)
-    ZEND_ARG_INFO(0, extension_filename)
-ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO(arginfo_micro_update_extension_dir, 0)
-    ZEND_ARG_INFO(0, new_dir)
-ZEND_END_ARG_INFO()
-
-#    ifdef PHP_WIN32
-ZEND_BEGIN_ARG_INFO(arginfo_micro_enum_modules, 0)
-ZEND_END_ARG_INFO()
-
-#    endif // PHP_WIN32
-
-#endif
 
 ZEND_BEGIN_ARG_INFO(arginfo_micro_get_sfx_filesize, 0)
 ZEND_END_ARG_INFO()
@@ -364,14 +333,6 @@ ZEND_END_ARG_INFO()
 // clang-format off
 
 static const zend_function_entry additional_functions[] = {
-#ifdef _DEBUG
-    // debug functions
-    ZEND_FE(dl, arginfo_dl)
-    PHP_FE(micro_update_extension_dir, arginfo_micro_update_extension_dir)
-#   ifdef PHP_WIN32
-    PHP_FE(micro_enum_modules, arginfo_micro_enum_modules)
-#   endif // PHP_WIN32
-#endif // _DEBUG
     // cli functions
     PHP_FE(cli_set_process_title, arginfo_cli_set_process_title)
     PHP_FE(cli_get_process_title, arginfo_cli_get_process_title)
@@ -450,15 +411,6 @@ int main(int argc, char *argv[])
 #endif
 {
     int exit_status = 0;
-#ifdef _DEBUG
-    const char *_debug_env = getenv("MICRO_DEBUG");
-    micro_debug = _debug_env && (int)strnlen(_debug_env, 1);
-#endif
-#if defined(PHP_WIN32) && defined(_DEBUG)
-    if (0 != (exit_status = micro_helper_init())) {
-        return exit_status;
-    }
-#endif
     if (0 != (exit_status = micro_fileinfo_init())) {
         return exit_status;
     }
@@ -493,32 +445,7 @@ int main(int argc, char *argv[])
     sapi_module_struct *sapi_module = &micro_sapi_module;
     int module_started = 0, request_started = 0, sapi_started = 0;
 
-#if defined(PHP_WIN32) && !defined(PHP_MICRO_WIN32_NO_CONSOLE)
-    php_win32_console_fileno_set_vt100(STDOUT_FILENO, TRUE);
-    php_win32_console_fileno_set_vt100(STDERR_FILENO, TRUE);
-#endif
-
     micro_sapi_module.additional_functions = additional_functions;
-
-#if false && defined(PHP_WIN32) && defined(_DEBUG) && defined(PHP_WIN32_DEBUG_HEAP)
-    {
-        char *tmp = getenv("PHP_WIN32_DEBUG_HEAP");
-		if (tmp && ZEND_ATOL(tmp)) {
-            int tmp_flag;
-            _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-            _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-            _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
-            _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
-            _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
-            _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-            tmp_flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
-            tmp_flag |= _CRTDBG_DELAY_FREE_MEM_DF;
-            tmp_flag |= _CRTDBG_LEAK_CHECK_DF;
-
-            _CrtSetDbgFlag(tmp_flag);
-        }
-    }
-#endif
 
 #if defined(SIGPIPE) && defined(SIG_IGN)
     signal(SIGPIPE, SIG_IGN); /* ignore SIGPIPE in standalone mode so
@@ -531,25 +458,9 @@ int main(int argc, char *argv[])
 
 #ifdef ZTS
     php_tsrm_startup();
-#    ifdef PHP_WIN32
-    ZEND_TSRMLS_CACHE_UPDATE();
-#    endif
 #endif
 
     zend_signal_startup();
-
-#ifdef PHP_WIN32
-    int wapiret = 0;
-    php_win32_init_random_bytes();
-    // php_win32_signal_ctrl_handler_init();
-    php_win32_ioutil_init();
-    php_win32_init_gettimeofday();
-
-    _fmode = _O_BINARY;                 /* sets default for file streams to binary */
-    setmode(_fileno(stdin), O_BINARY);  /* make the stdio mode be binary */
-    setmode(_fileno(stdout), O_BINARY); /* make the stdio mode be binary */
-    setmode(_fileno(stderr), O_BINARY); /* make the stdio mode be binary */
-#endif
 
     // here we start execution
     dbgprintf("start try catch\n");
