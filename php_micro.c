@@ -404,11 +404,8 @@ int micro_debug = 0;
 #endif
 /* {{{ main
  */
-#ifdef PHP_MICRO_WIN32_NO_CONSOLE
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
-#else
+
 int main(int argc, char *argv[])
-#endif
 {
     int exit_status = 0;
     if (0 != (exit_status = micro_fileinfo_init())) {
