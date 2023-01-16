@@ -24,6 +24,7 @@ limitations under the License.
 #include "php_micro_helper.h"
 
 #include <stdint.h>
+#include <fcntl.h>
 
 #    include <sys/auxv.h>
 
